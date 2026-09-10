@@ -19,7 +19,18 @@ echo "=========================================="
 echo
 
 # ------------------------------------------
-# 1. Get configuration from user
+# 1. Check root
+# ------------------------------------------
+
+if [[ $EUID -ne 0 ]]; then
+    echo "ERROR: این اسکریپت باید با root اجرا شود."
+    echo "اجرا کنید:"
+    echo "sudo ./install-zabbix.sh"
+    exit 1
+fi
+
+# ------------------------------------------
+# 2. Get configuration from user
 # ------------------------------------------
 
 read -rp "Hostname را وارد کنید: " HOSTNAME_NEW
@@ -40,7 +51,10 @@ echo
 echo "------------------------------------------"
 echo "Hostname      : $HOSTNAME_NEW"
 echo "Zabbix Server : $ZABBIX_SERVER"
+echo
+echo "Proxy Server  : $ZABBIX_SERVER"
 echo "Agent Server  : 127.0.0.1"
+echo "Agent Active  : $ZABBIX_SERVER"
 echo "------------------------------------------"
 echo
 
@@ -49,17 +63,6 @@ read -rp "ادامه می‌دهید؟ [y/N]: " CONFIRM
 if [[ "$CONFIRM" != "y" && "$CONFIRM" != "Y" ]]; then
     echo "لغو شد."
     exit 0
-fi
-
-# ------------------------------------------
-# 2. Check root
-# ------------------------------------------
-
-if [[ $EUID -ne 0 ]]; then
-    echo "ERROR: این اسکریپت باید با root اجرا شود."
-    echo "اجرا کنید:"
-    echo "sudo ./install-zabbix.sh"
-    exit 1
 fi
 
 # ------------------------------------------
@@ -140,7 +143,8 @@ if [[ ! -s "$DB" ]]; then
     fi
 
     sqlite3 "$DB" < "$SCHEMA"
-
+else
+    echo "دیتابیس موجود است؛ بدون تغییر باقی می‌ماند."
 fi
 
 chown zabbix:zabbix "$DB"
@@ -153,7 +157,8 @@ chmod 640 "$DB"
 echo
 echo "[5/8] تنظیم Zabbix Agent 2..."
 
-# Agent passive checks فقط از localhost
+# Passive checks:
+# فقط localhost اجازه اتصال دارد.
 if grep -qE '^Server=' "$AGENT_CONF"; then
     sed -i \
         -E 's/^Server=.*/Server=127.0.0.1/' \
@@ -162,16 +167,17 @@ else
     echo "Server=127.0.0.1" >> "$AGENT_CONF"
 fi
 
-# Agent active checks به Proxy روی همین سرور
+# Active checks:
+# Agent مستقیماً به Zabbix Server وصل می‌شود.
 if grep -qE '^ServerActive=' "$AGENT_CONF"; then
     sed -i \
-        -E 's/^ServerActive=.*/ServerActive=127.0.0.1/' \
+        -E "s/^ServerActive=.*/ServerActive=$ZABBIX_SERVER/" \
         "$AGENT_CONF"
 else
-    echo "ServerActive=127.0.0.1" >> "$AGENT_CONF"
+    echo "ServerActive=$ZABBIX_SERVER" >> "$AGENT_CONF"
 fi
 
-# Hostname
+# Hostname:
 if grep -qE '^Hostname=' "$AGENT_CONF"; then
     sed -i \
         -E "s/^Hostname=.*/Hostname=$HOSTNAME_NEW/" \
@@ -249,6 +255,7 @@ echo "=========================================="
 echo
 echo "Zabbix Server : $ZABBIX_SERVER"
 echo "Proxy Name    : $HOSTNAME_NEW"
-echo "Agent         : 127.0.0.1"
+echo "Agent Passive : 127.0.0.1"
+echo "Agent Active  : $ZABBIX_SERVER"
 echo
 ```
