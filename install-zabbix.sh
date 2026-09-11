@@ -1,4 +1,4 @@
-```bash
+bash
 #!/bin/bash
 
 set -e
@@ -258,4 +258,3 @@ echo "Proxy Name    : $HOSTNAME_NEW"
 echo "Agent Passive : 127.0.0.1"
 echo "Agent Active  : $ZABBIX_SERVER"
 echo
-```
