@@ -1,4 +1,3 @@
-```bash
 #!/bin/bash
 
 set -e
@@ -311,9 +310,5 @@ echo "Agent Passive Server : 127.0.0.1"
 echo "Agent Active Server  : $ZABBIX_SERVER"
 echo "------------------------------------------"
 echo
-```
 
-این نسخه همان منطق قبلی را حفظ می‌کند، ولی اصلاح اصلی این است که **قبل از ساخت/استفاده از SQLite، `/var/lib/zabbix` به `zabbix:zabbix` با permission `750` تنظیم می‌شود**؛ بنابراین خطای `not a writable directory` تکرار نمی‌شود.
-
-یک نکته هم مهم است: در نصب جدید، اگر DB از قبل وجود داشته باشد، اسکریپت آن را **دستکاری یا دوباره‌سازی نمی‌کند**.
 
